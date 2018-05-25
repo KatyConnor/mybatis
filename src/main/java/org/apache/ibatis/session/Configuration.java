@@ -1,5 +1,5 @@
 /**
- *    Copyright 2009-2017 the original author or authors.
+ *    Copyright 2009-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.apache.ibatis.binding.MapperRegistry;
 import org.apache.ibatis.builder.CacheRefResolver;
 import org.apache.ibatis.builder.ResultMapResolver;
 import org.apache.ibatis.builder.annotation.MethodResolver;
+import org.apache.ibatis.builder.xml.MapperSqlStatementBuilder;
 import org.apache.ibatis.builder.xml.XMLStatementBuilder;
 import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.cache.decorators.FifoCache;
@@ -155,6 +156,7 @@ public class Configuration {
   protected final Map<String, XNode> sqlFragments = new StrictMap<XNode>("XML fragments parsed from previous mappers");
 
   protected final Collection<XMLStatementBuilder> incompleteStatements = new LinkedList<XMLStatementBuilder>();
+  protected final Collection<MapperSqlStatementBuilder> incompleteMapperSqlStatements = new LinkedList<>();
   protected final Collection<CacheRefResolver> incompleteCacheRefs = new LinkedList<CacheRefResolver>();
   protected final Collection<ResultMapResolver> incompleteResultMaps = new LinkedList<ResultMapResolver>();
   protected final Collection<MethodResolver> incompleteMethods = new LinkedList<MethodResolver>();
@@ -686,6 +688,10 @@ public class Configuration {
     incompleteStatements.add(incompleteStatement);
   }
 
+  public Collection<MapperSqlStatementBuilder> getIncompleteMapperSqlStatements() {
+    return incompleteMapperSqlStatements;
+  }
+
   public Collection<CacheRefResolver> getIncompleteCacheRefs() {
     return incompleteCacheRefs;
   }
@@ -786,6 +792,13 @@ public class Configuration {
       synchronized (incompleteStatements) {
         // This always throws a BuilderException.
         incompleteStatements.iterator().next().parseStatementNode();
+      }
+    }
+
+    if (!incompleteMapperSqlStatements.isEmpty()) {
+      synchronized (incompleteMapperSqlStatements) {
+        // This always throws a BuilderException.
+        incompleteMapperSqlStatements.iterator().next().parseStatementNode();
       }
     }
     if (!incompleteMethods.isEmpty()) {

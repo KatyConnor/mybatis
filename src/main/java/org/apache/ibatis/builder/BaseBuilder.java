@@ -1,5 +1,5 @@
 /**
- *    Copyright 2009-2015 the original author or authors.
+ *    Copyright 2009-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -29,27 +29,34 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 入口抽象类
  * @author Clinton Begin
  */
 public abstract class BaseBuilder {
+  // mybatis的主要核心类，
   protected final Configuration configuration;
+  // 别名注册
   protected final TypeAliasRegistry typeAliasRegistry;
+  // 实体和数据库表数据类型映射处理handler
   protected final TypeHandlerRegistry typeHandlerRegistry;
-
+  // 初始化
   public BaseBuilder(Configuration configuration) {
     this.configuration = configuration;
     this.typeAliasRegistry = this.configuration.getTypeAliasRegistry();
     this.typeHandlerRegistry = this.configuration.getTypeHandlerRegistry();
   }
 
+  // 获取配置文件类 Configuration
   public Configuration getConfiguration() {
     return configuration;
   }
 
+  // 预编译
   protected Pattern parseExpression(String regex, String defaultValue) {
     return Pattern.compile(regex == null ? defaultValue : regex);
   }
 
+  // 如下方法是进行类型映射
   protected Boolean booleanValueOf(String value, Boolean defaultValue) {
     return value == null ? defaultValue : Boolean.valueOf(value);
   }

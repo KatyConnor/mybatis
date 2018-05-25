@@ -1,5 +1,5 @@
 /**
- *    Copyright 2009-2017 the original author or authors.
+ *    Copyright 2009-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 
 /**
+ * mybatis 初始化的入口
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
@@ -78,10 +79,12 @@ public class XMLConfigBuilder extends BaseBuilder {
     this(inputStream, environment, null);
   }
 
+
   public XMLConfigBuilder(InputStream inputStream, String environment, Properties props) {
     this(new XPathParser(inputStream, true, props, new XMLMapperEntityResolver()), environment, props);
   }
 
+  // mybatis config 配置文件解析成 XPathParser，其他参数通过属性文件配置获取Properties，然后解析到configuration
   private XMLConfigBuilder(XPathParser parser, String environment, Properties props) {
     super(new Configuration());
     ErrorContext.instance().resource("SQL Mapper Configuration");
@@ -91,6 +94,7 @@ public class XMLConfigBuilder extends BaseBuilder {
     this.parser = parser;
   }
 
+  // 加载配置文件，解析文件
   public Configuration parse() {
     if (parsed) {
       throw new BuilderException("Each XMLConfigBuilder can only be used once.");
@@ -100,6 +104,7 @@ public class XMLConfigBuilder extends BaseBuilder {
     return configuration;
   }
 
+  // 开始解析mybatis-config.xml 配置文件
   private void parseConfiguration(XNode root) {
     try {
       //issue #117 read properties first
@@ -117,6 +122,9 @@ public class XMLConfigBuilder extends BaseBuilder {
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
       typeHandlerElement(root.evalNode("typeHandlers"));
       mapperElement(root.evalNode("mappers"));
+      // add by mingliang 2018-04-11 新增扩展
+      // 加载mapper sql文件
+      mapperSqlElement(root);
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
     }
@@ -356,6 +364,11 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 加载 mapper 文件，解析 sql
+   * @param parent
+   * @throws Exception
+   */
   private void mapperElement(XNode parent) throws Exception {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
@@ -383,6 +396,31 @@ public class XMLConfigBuilder extends BaseBuilder {
             throw new BuilderException("A mapper element may only specify a url, resource or class, but not more than one.");
           }
         }
+      }
+    }
+  }
+
+  /**
+   *  ad by @author mingliang, 单个加载配置文件的情况
+   * 加载 mapperSql 文件，解析 sql
+   * @param root
+   * @throws Exception
+   */
+  private void mapperSqlElement(XNode root) throws Exception {
+    String url = null;
+    for (XNode child : root.getChildren()){
+      if ("mapperSql".equals(child.getName())){
+        url = child.getStringAttribute("url");
+        // @TODO test
+        ErrorContext.instance().resource(url);
+        InputStream inputStream = Resources.getUrlAsStream(url);
+        byte[] stream = new byte[1024];
+        inputStream.read(stream);
+        System.out.println("读取内容为 mapperSql = "+new String(stream));
+        MapperSqlConfigBuilder mapperParser = new MapperSqlConfigBuilder(configuration, url);
+        mapperParser.parse();
+      }else {
+        throw new BuilderException("A mapperSql element or url may not empty.");
       }
     }
   }
