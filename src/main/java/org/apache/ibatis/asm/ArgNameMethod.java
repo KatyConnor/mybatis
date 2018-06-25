@@ -69,8 +69,7 @@ public class ArgNameMethod {
                 if (!name.equals(m.getName()) || !sameType(args, m.getParameterTypes())) {
                     return super.visitMethod(access, name, desc, signature, exceptions);
                 }
-                MethodVisitor v = super.visitMethod(access, name, desc,
-                        signature, exceptions);
+                MethodVisitor v = super.visitMethod(access, name, desc, signature, exceptions);
                 return new MethodVisitor(Opcodes.ASM4, v) {
                     @Override
                     public void visitLocalVariable(String name, String desc,String signature, Label start, Label end, int index) {
@@ -83,8 +82,7 @@ public class ArgNameMethod {
                         if (i >= 0 && i < paramNames.length) {
                             paramNames[i] = name;
                         }
-                        super.visitLocalVariable(name, desc, signature, start,
-                                end, index);
+                        super.visitLocalVariable(name, desc, signature, start, end, index);
                     }
 
                 };
