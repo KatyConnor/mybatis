@@ -1,5 +1,5 @@
 /**
- *    Copyright 2009-2017 the original author or authors.
+ *    Copyright 2009-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.apache.ibatis.executor.keygen.KeyGenerator;
 import org.apache.ibatis.executor.keygen.NoKeyGenerator;
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
+import org.apache.ibatis.mapperSql.MapperSqlEntity;
 import org.apache.ibatis.scripting.LanguageDriver;
 import org.apache.ibatis.session.Configuration;
 
@@ -56,6 +57,7 @@ public final class MappedStatement {
   private Log statementLog;
   private LanguageDriver lang;
   private String[] resultSets;
+  private MapperSqlEntity mapperSqlEntity;
 
   MappedStatement() {
     // constructor disabled
@@ -173,6 +175,11 @@ public final class MappedStatement {
       return this;
     }
 
+    public Builder mapperSqlEntity(MapperSqlEntity mapperSqlEntity){
+      mappedStatement.mapperSqlEntity = mapperSqlEntity;
+      return this;
+    }
+
     /** @deprecated Use {@link #resultSets} */
     @Deprecated
     public Builder resulSets(String resultSet) {
@@ -280,6 +287,10 @@ public final class MappedStatement {
 
   public String[] getResultSets() {
     return resultSets;
+  }
+
+  public MapperSqlEntity getMapperSqlEntity() {
+    return mapperSqlEntity;
   }
 
   /** @deprecated Use {@link #getResultSets()} */
