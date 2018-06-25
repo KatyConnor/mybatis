@@ -123,8 +123,8 @@ public class XMLConfigBuilder extends BaseBuilder {
       typeHandlerElement(root.evalNode("typeHandlers"));
       mapperElement(root.evalNode("mappers"));
       // add by mingliang 2018-04-11 新增扩展
-      // 加载mapper sql文件
-      mapperSqlElement(root);
+      // 加载mapper sql文件, 暂时取消mapperSql节点
+      //mapperSqlElement(root);
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
     }
@@ -401,11 +401,13 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   /**
+   *  暂时不使用
    *  ad by @author mingliang, 单个加载配置文件的情况
    * 加载 mapperSql 文件，解析 sql
    * @param root
    * @throws Exception
    */
+  @Deprecated
   private void mapperSqlElement(XNode root) throws Exception {
     String url = null;
     for (XNode child : root.getChildren()){
