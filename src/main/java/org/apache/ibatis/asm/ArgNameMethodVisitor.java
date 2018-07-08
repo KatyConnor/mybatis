@@ -15,17 +15,22 @@
  */
 package org.apache.ibatis.asm;
 
+import com.sun.scenario.effect.impl.prism.PrImage;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author mingliang
  * @Date 2018-06-11 17:26
  */
 public class ArgNameMethodVisitor extends MethodVisitor {
-    // 参数
+    /** 变量名 */
+    private List<String> variables;
     private List<String> argumentNames;
     private int argLen; //变量个数
 
@@ -35,15 +40,33 @@ public class ArgNameMethodVisitor extends MethodVisitor {
         this.argLen=argLen;
     }
 
-    //asm遍历局部变量
+    /**
+     * asm遍历局部变量
+     * @param name
+     * @param desc
+     * @param signature
+     * @param start
+     * @param end
+     * @param index
+     */
     @Override
     public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
         //如果是this变量，则掠过
         if("this".equals(name)) {
             return;
         }
+
+        System.out.println("name = "+name);
+
         if(argLen-- > 0) {
+            System.out.println("name = "+name);
             argumentNames.add(name);
         }
+    }
+
+    @Override
+    public void visitParameter(String name, int access) {
+//        super.visitParameter(name, access);
+        System.out.println("paramName = "+name);
     }
 }

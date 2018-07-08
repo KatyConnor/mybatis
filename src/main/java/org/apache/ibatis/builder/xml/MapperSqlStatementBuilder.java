@@ -16,13 +16,12 @@
 package org.apache.ibatis.builder.xml;
 
 import org.apache.ibatis.builder.BaseBuilder;
-import org.apache.ibatis.builder.IncompleteElementException;
+import org.apache.ibatis.builder.annotation.ProviderSqlSource;
 import org.apache.ibatis.mapperSql.MapperSqlEntity;
 import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.session.Configuration;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 /**
  * @Author mingliang
@@ -45,16 +44,35 @@ public class MapperSqlStatementBuilder extends BaseBuilder {
         this.requiredDatabaseId = databaseId;
     }
 
-    // 解析node
+    // 解析node,将dao接口方法放入，MappedStatement 对象
     public void parseStatementNode() {
-        String id = mapperSqlEntity.getNamespace();
-        SqlSource sqlSource = null;
-        SqlCommandType sqlCommandType = null;
-        MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
-                .resource(resource)
-                .databaseId("");
-        MappedStatement statement = statementBuilder.build();
-        configuration.addMappedStatement(statement);
+        String nameSpace = this.mapperSqlEntity.getNamespace();
+        Map<String,MapperSqlEntity.SqlEntity> methodMap = this.mapperSqlEntity.getSqlMap();
+        StringBuffer id = new StringBuffer();
+        for (Map.Entry entry : methodMap.entrySet()){
+            SqlSource sqlSource = new ProviderSqlSource(this.configuration,null,null,null);
+            SqlCommandType sqlCommandType = getSqlCommandType(((MapperSqlEntity.SqlEntity)entry.getValue()).getSqlTemplate().toString());
+            id.append(nameSpace).append(".").append(entry.getKey());
+            MappedStatement.Builder statementBuilder = new MappedStatement.Builder(this.configuration, id.toString(), sqlSource, sqlCommandType)
+                    .resource(this.resource).mapperSqlEntity(this.mapperSqlEntity)
+                    .databaseId(this.requiredDatabaseId);
+            MappedStatement statement = statementBuilder.build();
+            this.configuration.addMappedStatement(statement);
+            id.delete(0,id.length());
+        }
     }
 
+    private SqlCommandType getSqlCommandType(String sql){
+       if (sql.startsWith("SELECT") || sql.startsWith("select")){
+           return SqlCommandType.SELECT;
+       }else if (sql.startsWith("INSERT") || sql.startsWith("insert")){
+           return SqlCommandType.INSERT;
+       }else if (sql.startsWith("UPDATE") || sql.startsWith("update")){
+           return SqlCommandType.UPDATE;
+       }else if (sql.startsWith("DELETE") || sql.startsWith("delete")){
+           return SqlCommandType.DELETE;
+       }else {
+           return SqlCommandType.UNKNOWN;
+       }
+    }
 }

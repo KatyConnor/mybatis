@@ -15,7 +15,7 @@
  */
 package org.apache.ibatis.mapperSql;
 
-import org.apache.ibatis.builder.BuilderException;
+import org.apache.ibatis.exceptions.MapperSqlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,6 @@ import java.util.Map;
 public class MapperSqlHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MapperSqlHelper.class);
-    private static String classPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
 
     /**
      * <p>
@@ -48,8 +48,9 @@ public class MapperSqlHelper {
         if (null == mapperUrl){
             new RuntimeException(String.format("*.mapper文件不存在!, url = %s",mapperUrl));
         }
+        mapperSqlEntityList = new ArrayList<>();
         if (mapperUrl.indexOf("*") != -1){
-            File file = FileReadStream.getResources(classPath+mapperUrl.split("\\*")[0]);
+            File file = FileReadStream.getResources(mapperUrl.split("\\*")[0]); //classPath+
             File[] fileSources = file.listFiles();
             for (int i = 0; i < fileSources.length; i++) {
                 if (fileSources[i].isFile() && fileSources[i].getName().indexOf(".sql") != -1) {
@@ -61,7 +62,7 @@ public class MapperSqlHelper {
                 }
             }
         }else {
-             MapperSqlEntity mapperSqlEntity = readMapperFile(new File(classPath+mapperUrl));
+             MapperSqlEntity mapperSqlEntity = readMapperFile(new File(mapperUrl));
              if (null != mapperSqlEntity){
                  mapperSqlEntityList.add(mapperSqlEntity);
              }
@@ -105,45 +106,30 @@ public class MapperSqlHelper {
     private static MapperSqlEntity analysisStringReader(String reader){
         String[] readers = reader.split(";");
         if (readers.length == 0){
-            throw new RuntimeException("文件语法错误，文件中每一行语句必须使用 ; 分割");
+            throw new RuntimeException("文件语法错误，每一行语句必须使用 ; 结尾");
         }
         MapperSqlEntity mapperSqlEntity = null;
         // 解析文件头，文件头必须是import引入相关变量，若果没有import就解析dao接口，然后再解析接口的调用方法，然后在解析对应的sql
         int lineCount = 0;
         Map<String,String> importParamMap = new HashMap<>();
-        Map<String,String> sqlMap = new HashMap<>();
+
         for (String str : readers){
             // 文件头
             if (lineCount == 0 && str.indexOf("namespace") == -1) {
-                throw new BuilderException("Mapper's import cannot be empty");
+                throw new MapperSqlException("Mapper's namespace cannot be empty");
             }
 
-            if (str.indexOf("namespace") != -1){
-                mapperSqlEntity = new MapperSqlEntity();
-                mapperSqlEntity.setNamespace(str.trim().split(" ")[1].trim());
+
+            if (str.indexOf("namespace") != -1 && str.trim().split(" ").length >= 2){
+                mapperSqlEntity = new MapperSqlEntity(str.trim().split(" ")[1].trim());
+            }else{
+                throw new MapperSqlException(String.format("this Syntax error for nameSpace, Please use the correct nameSpace [%s]",str));
             }
 
-            // 解析import部分
-            if (str.indexOf("import") != -1){
-                String[] importStrs = str.trim().split(" ");
-                if (importStrs.length < 3){
-                    throw new BuilderException("this import Incomplete, Please complete the "+ str);
-                }
-                importParamMap.put(importStrs[1],importStrs[2]);
+            if (lineCount >= 1){
+                mapperSqlEntity.build(str);
             }
-
-            // 解析方法名称
-            if (str.indexOf("method") != -1){
-                String[] methodStr = str.trim().split(" ");
-                if (methodStr.length < 3){
-                    throw new BuilderException("this method Incomplete, Please complete the "+ str);
-                }
-                sqlMap.put(methodStr[1],methodStr[2]);
-            }
-        }
-        if (null != mapperSqlEntity){
-            mapperSqlEntity.setImportParamMap(importParamMap);
-            mapperSqlEntity.setSqlMap(sqlMap);
+            lineCount++;
         }
         return mapperSqlEntity;
     }

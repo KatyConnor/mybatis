@@ -19,13 +19,11 @@ import org.apache.ibatis.builder.*;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.mapperSql.MapperSqlEntity;
 import org.apache.ibatis.mapperSql.MapperSqlHelper;
-import org.apache.ibatis.mapping.*;
-import org.apache.ibatis.parsing.XNode;
 import org.apache.ibatis.session.Configuration;
 import java.util.*;
 
 /**
- *
+ * 加 mapperSql 文件， 对sql不做解析，解析留个外部来做
  * @Author mingliang
  * @Date 2018-04-11 16:37
  */
@@ -39,6 +37,7 @@ public class MapperSqlConfigBuilder extends BaseBuilder {
         this.resource = resource;
     }
 
+    // 主要的解析方法
     public void parse() {
         // 没有加载的情况下先加载
         if (!configuration.isResourceLoaded(resource)) {
@@ -51,11 +50,11 @@ public class MapperSqlConfigBuilder extends BaseBuilder {
 
     private void configurationElement(String resource) {
         try {
-            // 读取文件，
+            // 读取文件
             this.mapperSqlEntities = MapperSqlHelper.readMapper(resource);
-            buildStatementFromContext(mapperSqlEntities);
+            buildStatementFromContext(this.mapperSqlEntities);
         } catch (Exception e) {
-            throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
+            throw new BuilderException("Error parsing Mapper sql file. The mapper sql location is '" + resource + "'. Cause: " + e, e);
         }
     }
 
@@ -87,6 +86,7 @@ public class MapperSqlConfigBuilder extends BaseBuilder {
         }
     }
 
+    // 添加mapper，将接口放入configuration 对象
     private void addMapper(String namespace){
         if (null != namespace) {
             Class<?> boundType = null;
@@ -95,6 +95,7 @@ public class MapperSqlConfigBuilder extends BaseBuilder {
             } catch (ClassNotFoundException e) {
                 //ignore, bound type is not required
             }
+
             if (boundType != null) {
                 if (!configuration.hasMapper(boundType)) {
                     configuration.addLoadedResource("namespace:" + namespace);

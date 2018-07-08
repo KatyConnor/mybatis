@@ -1,11 +1,10 @@
 /**
- *    Copyright 2009-2018 the original author or authors.
+ *    Copyright 2018-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
  *    You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *    Unless required by applicable law or agreed to in writing, software
  *    distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +20,9 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author mingliang
@@ -29,6 +30,8 @@ import java.util.List;
  */
 public class ArgNameClassVisitor extends ClassVisitor {
     private List<String> argumentNames = new ArrayList<>();
+    private Map<String,Class<?>> argTypeMap = new HashMap<>();
+
     public ArgNameClassVisitor() {
         super(Opcodes.ASM5);
     }
@@ -36,11 +39,17 @@ public class ArgNameClassVisitor extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         Type methodType = Type.getMethodType(desc);
-        int len = methodType.getArgumentTypes().length;
+        Type[] types = methodType.getArgumentTypes();
+//        argTypeMap.put()
+        int len = types.length;
         return new ArgNameMethodVisitor(Opcodes.ASM5,argumentNames,len);
     }
 
     public List<String> getArgumentNames() {
         return argumentNames;
+    }
+
+    public Map<String, Class<?>> getArgTypeMap() {
+        return argTypeMap;
     }
 }

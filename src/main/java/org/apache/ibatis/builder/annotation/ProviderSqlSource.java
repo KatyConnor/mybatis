@@ -1,5 +1,5 @@
 /**
- *    Copyright 2009-2017 the original author or authors.
+ *    Copyright 2009-2018 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -52,6 +52,8 @@ public class ProviderSqlSource implements SqlSource {
   }
 
   /**
+   *  通用mapper中在扩展mapper时需要添加 【】 注解，然后解析
+   *
    * @since 3.4.5
    */
   public ProviderSqlSource(Configuration configuration, Object provider, Class<?> mapperType, Method mapperMethod) {
@@ -59,30 +61,37 @@ public class ProviderSqlSource implements SqlSource {
     try {
       this.configuration = configuration;
       this.sqlSourceParser = new SqlSourceBuilder(configuration);
-      this.providerType = (Class<?>) provider.getClass().getMethod("type").invoke(provider);
-      providerMethodName = (String) provider.getClass().getMethod("method").invoke(provider);
-
-      for (Method m : this.providerType.getMethods()) {
-        if (providerMethodName.equals(m.getName()) && CharSequence.class.isAssignableFrom(m.getReturnType())) {
-          if (providerMethod != null){
-            throw new BuilderException("Error creating SqlSource for SqlProvider. Method '"
-                    + providerMethodName + "' is found multiple in SqlProvider '" + this.providerType.getName()
-                    + "'. Sql provider method can not overload.");
+      if (null == provider){
+        this.providerType = null;
+        return;
+      }else {
+        this.providerType = (Class<?>) provider.getClass().getMethod("type").invoke(provider);
+        providerMethodName = (String) provider.getClass().getMethod("method").invoke(provider);
+        for (Method m : this.providerType.getMethods()) {
+          if (providerMethodName.equals(m.getName()) && CharSequence.class.isAssignableFrom(m.getReturnType())) {
+            if (providerMethod != null){
+              throw new BuilderException("Error creating SqlSource for SqlProvider. Method '"
+                      + providerMethodName + "' is found multiple in SqlProvider '" + this.providerType.getName()
+                      + "'. Sql provider method can not overload.");
+            }
+            this.providerMethod = m;
+            this.providerMethodArgumentNames = new ParamNameResolver(configuration, m).getNames();
+            this.providerMethodParameterTypes = m.getParameterTypes();
           }
-          this.providerMethod = m;
-          this.providerMethodArgumentNames = new ParamNameResolver(configuration, m).getNames();
-          this.providerMethodParameterTypes = m.getParameterTypes();
         }
       }
+
     } catch (BuilderException e) {
       throw e;
     } catch (Exception e) {
       throw new BuilderException("Error creating SqlSource for SqlProvider.  Cause: " + e, e);
     }
+
     if (this.providerMethod == null) {
       throw new BuilderException("Error creating SqlSource for SqlProvider. Method '"
           + providerMethodName + "' not found in SqlProvider '" + this.providerType.getName() + "'.");
     }
+
     for (int i = 0; i< this.providerMethodParameterTypes.length; i++) {
       Class<?> parameterType = this.providerMethodParameterTypes[i];
       if (parameterType == ProviderContext.class) {

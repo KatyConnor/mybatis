@@ -20,7 +20,9 @@ import org.objectweb.asm.*;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author mingliang
@@ -28,13 +30,31 @@ import java.util.List;
  */
 public class ArgNameMethod {
 
+    /**
+     * 获取方法参数名
+     * @param method
+     * @return
+     */
     public static List<String> methodArgNames(final Method method){
         final String n = method.getDeclaringClass().getName();
         try {
             ClassReader cr = new ClassReader(n);
-            ArgNameClassVisitor cl=new ArgNameClassVisitor();
-            cr.accept(cl, 0);
-            return cl.getArgumentNames();
+            ArgNameClassVisitor argNameClassVisitor=new ArgNameClassVisitor();
+            cr.accept(argNameClassVisitor, 0);
+            return argNameClassVisitor.getArgumentNames();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Collections.EMPTY_LIST;
+    }
+
+    public static Map<String,Class<?>> methodArgTypes(final Method method){
+        final String n = method.getDeclaringClass().getName();
+        try {
+            ClassReader cr = new ClassReader(n);
+            ArgNameClassVisitor argNameClassVisitor=new ArgNameClassVisitor();
+            cr.accept(argNameClassVisitor, 0);
+            return argNameClassVisitor.getArgTypeMap();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -115,5 +135,10 @@ public class ArgNameMethod {
             }
         }
         return true;
+    }
+
+    public static void main(String[] args) throws NoSuchMethodException {
+        Method method = TestClass.class.getDeclaredMethod("getName",String.class,int.class,List.class);
+        methodArgNames(method);
     }
 }
